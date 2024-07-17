@@ -1,0 +1,306 @@
+version: 1
+default_environment: dev
+project_id: 0f1f246a-46ef-4436-bb99-5f989c2a2e55
+
+environments:
+- name: dev
+- name: staging
+- name: prod
+
+plugins:
+
+  extractors:
+
+  - name: tap-csv-to-finaldb
+    inherit_from: tap-csv
+    config: 
+      files:
+      - entity: order_details
+        path: /opt/data/output/csv/order_details/${EXECUTION_DATE}
+        keys:
+        - order_id
+        - product_id
+      - entity: customers
+        path: /opt/data/output/postgres/public-customers/${EXECUTION_DATE}
+        keys:
+        - customer_id
+      - entity: orders
+        path: /opt/data/output/postgres/public-orders/${EXECUTION_DATE}
+        keys:
+        - order_id
+      - entity: shippers
+        path: /opt/data/output/postgres/public-shippers/${EXECUTION_DATE}
+        keys:
+        - shipper_id
+      - entity: us_states
+        path: /opt/data/output/postgres/public-us_states/${EXECUTION_DATE}
+        keys:
+        - state_id 
+      - entity: region
+        path: /opt/data/output/postgres/public-region/${EXECUTION_DATE}
+        keys:
+        - region_id
+      - entity: territories
+        path: /opt/data/output/postgres/public-territories/${EXECUTION_DATE}
+        keys:
+        - territory_id
+      - entity: employee_territories
+        path: /opt/data/output/postgres/public-employee_territories/${EXECUTION_DATE}
+        keys:
+        - employee_id
+        - territory_id
+      - entity: employees
+        path: /opt/data/output/postgres/public-employees/${EXECUTION_DATE}
+        keys:
+        - employee_id 
+      - entity: suppliers
+        path: /opt/data/output/postgres/public-suppliers/${EXECUTION_DATE}
+        keys:
+        - supplier_id 
+      - entity: products
+        path: /opt/data/output/postgres/public-products/${EXECUTION_DATE}
+        keys:
+        - product_id  
+      - entity: categories
+        path: /opt/data/output/postgres/public-categories/${EXECUTION_DATE}
+        keys:
+        - category_id
+
+  - name: tap-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+
+  - name: tap-csv-order_details
+    inherit_from: tap-csv
+    config:
+      files:
+      - entity: order_details
+        path: /opt/data/order_details.csv
+        keys:
+        - order_id
+        - product_id
+
+  - name: tap-postgres
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-postgres.git
+    config:
+      database: northwind
+      host: localhost
+      port: '5432'
+      user: airflow
+      password: airflow
+
+  - name: tap-categories
+    inherit_from: tap-postgres
+    select:
+    - public-categories.*
+
+  - name: tap-orders
+    inherit_from: tap-postgres
+    config:
+      stream_maps:
+        public-orders:
+          freight: str(freight)
+    select:
+    - public-orders.*
+
+  - name: tap-products
+    inherit_from: tap-postgres
+    config:
+      stream_maps:
+        public-products:
+          unit_price: str(unit_price)
+    select:
+    - public-products.*
+
+  - name: tap-suppliers
+    inherit_from: tap-postgres
+    select:
+    - public-suppliers.*
+
+  - name: tap-customers
+    inherit_from: tap-postgres
+    select:
+    - public-customers.*
+
+  - name: tap-customer_customer_demo
+    inherit_from: tap-postgres
+    config:
+      stream_maps:
+        public-customer_customer_demo:
+          customer_id: str(customer_id)
+          customer_type_id: str(customer_type_id)
+    select:
+    - public-customer_customer_demo.*
+
+  - name: tap-customer_demographics
+    inherit_from: tap-postgres
+    select:
+    - public-customer_demographics.*
+
+  - name: tap-employees
+    inherit_from: tap-postgres
+    select:
+    - public-employees.*
+
+  - name: tap-employee_territories
+    inherit_from: tap-postgres
+    select:
+    - public-employee_territories.*
+
+  - name: tap-territories
+    inherit_from: tap-postgres
+    select:
+    - public-territories.*
+
+  - name: tap-region
+    inherit_from: tap-postgres
+    select:
+    - public-region.*
+
+  - name: tap-shippers
+    inherit_from: tap-postgres
+    select:
+    - public-shippers.*
+
+  - name: tap-us_states
+    inherit_from: tap-postgres
+    select:
+    - public-us_states.*
+
+  loaders:
+
+  #- name: target-postgres-to-finaldb
+    #inherit_from: target-postgres
+    
+  - name: target-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/target-csv.git
+    
+  - name: target-csv-order_details
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: order_details
+
+  - name: target-csv-categories
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: categories
+
+  - name: target-csv-products
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: products
+
+  - name: target-csv-suppliers
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: suppliers
+
+  - name: target-csv-customers
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: customers
+
+  - name: target-csv-customer_customer_demo
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: customer_customer_demo
+
+  - name: target-csv-customer_demographics
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: customer_demographics
+
+  - name: target-csv-orders
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: orders
+
+  - name: target-csv-employees
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: employees
+
+  - name: target-csv-employee_territories
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: employee_territories
+
+  - name: target-csv-territories
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: territories
+
+  - name: target-csv-region
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: region
+
+  - name: target-csv-shippers
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: shippers
+
+  - name: target-csv-us_states
+    inherit_from: target-csv
+    config:
+      destination_path: /opt/data/output
+      custom_name: us_states
+
+  - name: target-postgres
+    variant: meltanolabs
+    pip_url: meltanolabs-target-postgres
+    config:
+      database: northwind_final
+      host: localhost
+      port: '5432'
+      user: airflow
+      password: airflow
+      default_target_schema: public
+      add_record_metadata: false
+      activate_version: false
+
+  mappers:
+  - name: meltano-map-transformer
+    variant: meltano
+    pip_url: git+https://github.com/MeltanoLabs/meltano-map-transform.git
+
+jobs:
+
+- name: tap-csv-order_details-to-target-csv-order_details
+  tasks:
+  - tap-csv-order_details target-csv-order_details
+
+- name: tap-postgres-to-tap-csv
+  tasks:
+  - tap-categories target-csv-categories
+  - tap-orders target-csv-orders
+  - tap-products target-csv-products
+  - tap-suppliers target-csv-suppliers
+  - tap-customers target-csv-customers
+  - tap-customer_customer_demo target-csv-customer_customer_demo
+  - tap-customer_demographics target-csv-customer_demographics
+  - tap-employees target-csv-employees
+  - tap-employee_territories target-csv-employee_territories
+  - tap-territories target-csv-territories
+  - tap-region target-csv-region
+  - tap-shippers target-csv-shippers
+  - tap-us_states target-csv-us_states
+
+- name: csv-to-postgres-finaldb
+  tasks:
+  - tap-csv-to-finaldb target-postgres
