@@ -1,16 +1,16 @@
+import os
+import shutil
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from datetime import datetime
 from docker.types import Mount
-import os
-import shutil
 
 default_args={
 
 }
 
-def create_tables(**context):
+def create_folders(**context):
     #Este e o path do volume do container do Airflow onde serão carregados os arquivos
     dir_atual = '/opt/data/output'
 
@@ -48,28 +48,23 @@ def create_tables(**context):
 
 
 with DAG (
-    
     dag_id="Extração_lighthouse",
     start_date=datetime(2024,6,6),
     schedule_interval="@daily",
     catchup=False
-
 ) as dag:
-
 
     mounts = [
         Mount(
-            source='/home/pietro/Documentos/desafio_engenharia_dados/data',  
+            source='<path>/data', #Altere <path> para o caminho absoluto da raiz do seu repositório  
             target='/opt/data',  
             type='bind',
         ),
     ]
 
-
-    
-    task_csv_to_csv = DockerOperator(
+    csv_to_csv = DockerOperator(
         task_id='csv_to_csv',
-        image='desafio-meltano:v2.2',
+        image='meltano-lighthouse:latest', #Caso tenha buildado imagem com outro nome e versão altere aqui
         container_name='csv_to_csv',
         api_version= 'auto',
         docker_url="unix://var/run/docker.sock",
@@ -80,10 +75,9 @@ with DAG (
         command="run tap-csv-order_details-to-target-csv-order_details"
     )
     
-
-    task_postgres_to_csv = DockerOperator(
+    postgres_to_csv = DockerOperator(
         task_id='postgres_to_csv',
-        image='desafio-meltano:v2.2',
+        image='meltano-lighthouse:latest', #Caso tenha buildado imagem com outro nome e versão altere aqui
         container_name='postgres_to_csv',
         api_version= 'auto',
         docker_url="unix://var/run/docker.sock",
@@ -94,9 +88,9 @@ with DAG (
         command="run tap-postgres-to-tap-csv"
     )
     
-    task_csv_to_postgres = DockerOperator(
+    csv_to_postgres = DockerOperator(
         task_id='csv_to_postgres',
-        image='desafio-meltano:v2.2',
+        image='meltano-lighthouse:latest', #Caso tenha buildado imagem com outro nome e versão altere aqui
         container_name='csv_to_postgres',
         api_version= 'auto',
         docker_url="unix://var/run/docker.sock",
@@ -108,13 +102,12 @@ with DAG (
         command="run csv-to-postgres-finaldb"
     )
     
-    
-    faz_pastas = PythonOperator(
-        task_id='create_tables',
-        python_callable=create_tables,
+    create_folders = PythonOperator(
+        task_id='create_folders',
+        python_callable=create_folders,
         provide_context=True,
         dag=dag,
     )
 
-    [task_csv_to_csv, task_postgres_to_csv] >> faz_pastas >> task_csv_to_postgres 
+    [csv_to_csv, postgres_to_csv] >> create_folders >> csv_to_postgres 
    

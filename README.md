@@ -49,7 +49,7 @@ Dentro da pasta desafio utilize o comando:
 docker build -t nomedoprojetomeltano:versãodoprojeto .
 ```
 
-NOTA: A Dag esta configurada como : meltano-lighthouse:latest, caso a imagem seja buildada com outro nome e versão, será necessário realizar essa alteração no código da Dag.
+NOTA: A Dag esta configurada como : <meltano-lighthouse:latest>, caso a imagem seja buildada com outro nome e versão, será necessário realizar essa alteração no código da Dag.
 
 Desta maneira nossa imagem docker do projeto será montada e estará pronta para ser utilizada.
 
